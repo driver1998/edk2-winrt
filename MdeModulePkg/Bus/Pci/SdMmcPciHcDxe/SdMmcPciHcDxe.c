@@ -51,8 +51,8 @@ SD_MMC_HC_PRIVATE_DATA gSdMmcPciHcTemplate = {
                                     // Queue
   INITIALIZE_LIST_HEAD_VARIABLE (gSdMmcPciHcTemplate.Queue),
   {                                 // Slot
-    {0, UnknownSlot, 0, 0}, {0, UnknownSlot, 0, 0}, {0, UnknownSlot, 0, 0},
-    {0, UnknownSlot, 0, 0}, {0, UnknownSlot, 0, 0}, {0, UnknownSlot, 0, 0}
+    {0, UnknownSlot, 0, 0, 0}, {0, UnknownSlot, 0, 0, 0}, {0, UnknownSlot, 0, 0, 0},
+    {0, UnknownSlot, 0, 0, 0}, {0, UnknownSlot, 0, 0, 0}, {0, UnknownSlot, 0, 0, 0}
   },
   {                                 // Capability
     {0},
@@ -247,6 +247,7 @@ SdMmcPciHcEnumerateDevice (
       if ((Status == EFI_MEDIA_CHANGED) && (MediaPresent == FALSE)) {
         DEBUG ((EFI_D_INFO, "SdMmcPciHcEnumerateDevice: device disconnected at slot %d of pci %p\n", Slot, Private->PciIo));
         Private->Slot[Slot].MediaPresent = FALSE;
+        Private->Slot[Slot].Initialized  = FALSE;
         //
         // Signal all async task events at the slot with EFI_NO_MEDIA status.
         //
@@ -283,6 +284,7 @@ SdMmcPciHcEnumerateDevice (
         }
 
         Private->Slot[Slot].MediaPresent = TRUE;
+        Private->Slot[Slot].Initialized  = TRUE;
         RoutineNum = sizeof (mCardTypeDetectRoutineTable) / sizeof (CARD_TYPE_DETECT_ROUTINE);
         for (Index = 0; Index < RoutineNum; Index++) {
           Routine = &mCardTypeDetectRoutineTable[Index];
@@ -292,6 +294,12 @@ SdMmcPciHcEnumerateDevice (
               break;
             }
           }
+        }
+        //
+        // This card doesn't get initialized correctly.
+        //
+        if (Index == RoutineNum) {
+          Private->Slot[Slot].Initialized = FALSE;
         }
 
         //
@@ -626,6 +634,7 @@ SdMmcPciHcDriverBindingStart (
     }
 
     Private->Slot[Slot].MediaPresent = TRUE;
+    Private->Slot[Slot].Initialized  = TRUE;
     RoutineNum = sizeof (mCardTypeDetectRoutineTable) / sizeof (CARD_TYPE_DETECT_ROUTINE);
     for (Index = 0; Index < RoutineNum; Index++) {
       Routine = &mCardTypeDetectRoutineTable[Index];
@@ -635,6 +644,12 @@ SdMmcPciHcDriverBindingStart (
           break;
         }
       }
+    }
+    //
+    // This card doesn't get initialized correctly.
+    //
+    if (Index == RoutineNum) {
+      Private->Slot[Slot].Initialized = FALSE;
     }
   }
 
@@ -918,6 +933,10 @@ SdMmcPassThruPassThru (
 
   if (!Private->Slot[Slot].MediaPresent) {
     return EFI_NO_MEDIA;
+  }
+
+  if (!Private->Slot[Slot].Initialized) {
+    return EFI_DEVICE_ERROR;
   }
 
   Trb = SdMmcCreateTrb (Private, Slot, Packet, Event);
@@ -1237,9 +1256,13 @@ SdMmcPassThruResetDevice (
     return EFI_INVALID_PARAMETER;
   }
 
-    if (!Private->Slot[Slot].MediaPresent) {
-      return EFI_NO_MEDIA;
-    }
+  if (!Private->Slot[Slot].MediaPresent) {
+    return EFI_NO_MEDIA;
+  }
+
+  if (!Private->Slot[Slot].Initialized) {
+    return EFI_DEVICE_ERROR;
+  }
   //
   // Free all async I/O requests in the queue
   //
