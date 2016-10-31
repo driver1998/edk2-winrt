@@ -143,6 +143,10 @@
   #
   BootLogoLib|Include/Library/BootLogoLib.h
 
+  ## @libraryclass   Provides a service to register non-discoverable device
+  ##
+  NonDiscoverableDeviceRegistrationLib|Include/Library/NonDiscoverableDeviceRegistrationLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
