@@ -197,7 +197,7 @@ Done:
       Trb->Packet->TransactionStatus = EFI_TIMEOUT;
       TrbEvent = Trb->Event;
       SdMmcFreeTrb (Trb);
-      DEBUG ((EFI_D_VERBOSE, "ProcessAsyncTaskList(): Signal Event %p EFI_TIMEOUT\n", TrbEvent));
+      DEBUG ((DEBUG_VERBOSE, "ProcessAsyncTaskList(): Signal Event %p EFI_TIMEOUT\n", TrbEvent));
       gBS->SignalEvent (TrbEvent);
       return;
     }
@@ -207,7 +207,7 @@ Done:
     Trb->Packet->TransactionStatus = Status;
     TrbEvent = Trb->Event;
     SdMmcFreeTrb (Trb);
-    DEBUG ((EFI_D_VERBOSE, "ProcessAsyncTaskList(): Signal Event %p with %r\n", TrbEvent, Status));
+    DEBUG ((DEBUG_VERBOSE, "ProcessAsyncTaskList(): Signal Event %p with %r\n", TrbEvent, Status));
     gBS->SignalEvent (TrbEvent);
   }
   return;
@@ -245,7 +245,7 @@ SdMmcPciHcEnumerateDevice (
     if ((Private->Slot[Slot].Enable) && (Private->Slot[Slot].SlotType == RemovableSlot)) {
       Status = SdMmcHcCardDetect (Private->PciIo, Slot, &MediaPresent);
       if ((Status == EFI_MEDIA_CHANGED) && !MediaPresent) {
-        DEBUG ((EFI_D_INFO, "SdMmcPciHcEnumerateDevice: device disconnected at slot %d of pci %p\n", Slot, Private->PciIo));
+        DEBUG ((DEBUG_INFO, "SdMmcPciHcEnumerateDevice: device disconnected at slot %d of pci %p\n", Slot, Private->PciIo));
         Private->Slot[Slot].MediaPresent = FALSE;
         Private->Slot[Slot].Initialized  = FALSE;
         //
@@ -274,7 +274,7 @@ SdMmcPciHcEnumerateDevice (
               );
       }
       if ((Status == EFI_MEDIA_CHANGED) && MediaPresent) {
-        DEBUG ((EFI_D_INFO, "SdMmcPciHcEnumerateDevice: device connected at slot %d of pci %p\n", Slot, Private->PciIo));
+        DEBUG ((DEBUG_INFO, "SdMmcPciHcEnumerateDevice: device connected at slot %d of pci %p\n", Slot, Private->PciIo));
         //
         // Reinitialize slot and restart identification process for the new attached device
         //
@@ -519,7 +519,7 @@ SdMmcPciHcDriverBindingStart (
   BOOLEAN                         MediaPresent;
   BOOLEAN                         Support64BitDma;
 
-  DEBUG ((EFI_D_INFO, "SdMmcPciHcDriverBindingStart: Start\n"));
+  DEBUG ((DEBUG_INFO, "SdMmcPciHcDriverBindingStart: Start\n"));
 
   //
   // Open PCI I/O Protocol and save pointer to open protocol
@@ -610,7 +610,7 @@ SdMmcPciHcDriverBindingStart (
 
     Private->Slot[Slot].SlotType = Private->Capability[Slot].SlotType;
     if ((Private->Slot[Slot].SlotType != RemovableSlot) && (Private->Slot[Slot].SlotType != EmbeddedSlot)) {
-      DEBUG ((EFI_D_INFO, "SdMmcPciHcDxe doesn't support the slot type [%d]!!!\n", Private->Slot[Slot].SlotType));
+      DEBUG ((DEBUG_INFO, "SdMmcPciHcDxe doesn't support the slot type [%d]!!!\n", Private->Slot[Slot].SlotType));
       continue;
     }
 
@@ -628,7 +628,7 @@ SdMmcPciHcDriverBindingStart (
     if (EFI_ERROR (Status) && (Status != EFI_MEDIA_CHANGED)) {
       continue;
     } else if (!MediaPresent) {
-      DEBUG ((EFI_D_ERROR, "SdMmcHcCardDetect: No device attached in Slot[%d]!!!\n", Slot));
+      DEBUG ((EFI_ERROR, "SdMmcHcCardDetect: No device attached in Slot[%d]!!!\n", Slot));
       continue;
     }
 
@@ -669,7 +669,7 @@ SdMmcPciHcDriverBindingStart (
                       NULL
                       );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_WARN, "SdMmcPciHcDriverBindingStart: failed to enable 64-bit DMA (%r)\n", Status));
+      DEBUG ((DEBUG_WARN, "SdMmcPciHcDriverBindingStart: failed to enable 64-bit DMA (%r)\n", Status));
     }
   }
 
@@ -718,7 +718,7 @@ SdMmcPciHcDriverBindingStart (
                   NULL
                   );
 
-  DEBUG ((EFI_D_INFO, "SdMmcPciHcDriverBindingStart: %r End on %x\n", Status, Controller));
+  DEBUG ((DEBUG_INFO, "SdMmcPciHcDriverBindingStart: %r End on %x\n", Status, Controller));
 
 Done:
   if (EFI_ERROR (Status)) {
@@ -799,7 +799,7 @@ SdMmcPciHcDriverBindingStop (
   LIST_ENTRY                          *NextLink;
   SD_MMC_HC_TRB                       *Trb;
 
-  DEBUG ((EFI_D_INFO, "SdMmcPciHcDriverBindingStop: Start\n"));
+  DEBUG ((DEBUG_INFO, "SdMmcPciHcDriverBindingStop: Start\n"));
 
   Status = gBS->OpenProtocol (
                   Controller,
@@ -873,7 +873,7 @@ SdMmcPciHcDriverBindingStop (
 
   FreePool (Private);
 
-  DEBUG ((EFI_D_INFO, "SdMmcPciHcDriverBindingStop: End with %r\n", Status));
+  DEBUG ((DEBUG_INFO, "SdMmcPciHcDriverBindingStop: End with %r\n", Status));
 
   return Status;
 }
