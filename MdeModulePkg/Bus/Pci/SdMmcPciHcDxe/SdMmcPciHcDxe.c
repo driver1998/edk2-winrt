@@ -7,14 +7,8 @@
   It would expose EFI_SD_MMC_PASS_THRU_PROTOCOL for upper layer use.
 
   Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
-  Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2015 - 2020, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -978,6 +972,58 @@ SdMmcPciHcDriverBindingStop (
 }
 
 /**
+  Execute TRB synchronously.
+
+  @param[in] Private  Pointer to driver private data.
+  @param[in] Trb      Pointer to TRB to execute.
+
+  @retval EFI_SUCCESS  TRB executed successfully.
+  @retval Other        TRB failed.
+**/
+EFI_STATUS
+SdMmcPassThruExecSyncTrb (
+  IN SD_MMC_HC_PRIVATE_DATA  *Private,
+  IN SD_MMC_HC_TRB           *Trb
+  )
+{
+  EFI_STATUS  Status;
+  EFI_TPL     OldTpl;
+
+  //
+  // Wait async I/O list is empty before execute sync I/O operation.
+  //
+  while (TRUE) {
+    OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
+    if (IsListEmpty (&Private->Queue)) {
+      gBS->RestoreTPL (OldTpl);
+      break;
+    }
+    gBS->RestoreTPL (OldTpl);
+  }
+
+  while (Trb->Retries) {
+    Status = SdMmcWaitTrbEnv (Private, Trb);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = SdMmcExecTrb (Private, Trb);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Status = SdMmcWaitTrbResult (Private, Trb);
+    if (Status == EFI_CRC_ERROR) {
+      Trb->Retries--;
+    } else {
+      return Status;
+    }
+  }
+
+  return Status;
+}
+
+/**
   Sends SD command to an SD card that is attached to the SD controller.
 
   The PassThru() function sends the SD command specified by Packet to the SD card
@@ -1026,7 +1072,6 @@ SdMmcPassThruPassThru (
   EFI_STATUS                      Status;
   SD_MMC_HC_PRIVATE_DATA          *Private;
   SD_MMC_HC_TRB                   *Trb;
-  EFI_TPL                         OldTpl;
 
   if ((This == NULL) || (Packet == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -1069,34 +1114,8 @@ SdMmcPassThruPassThru (
     return EFI_SUCCESS;
   }
 
-  //
-  // Wait async I/O list is empty before execute sync I/O operation.
-  //
-  while (TRUE) {
-    OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
-    if (IsListEmpty (&Private->Queue)) {
-      gBS->RestoreTPL (OldTpl);
-      break;
-    }
-    gBS->RestoreTPL (OldTpl);
-  }
+  Status = SdMmcPassThruExecSyncTrb (Private, Trb);
 
-  Status = SdMmcWaitTrbEnv (Private, Trb);
-  if (EFI_ERROR (Status)) {
-    goto Done;
-  }
-
-  Status = SdMmcExecTrb (Private, Trb);
-  if (EFI_ERROR (Status)) {
-    goto Done;
-  }
-
-  Status = SdMmcWaitTrbResult (Private, Trb);
-  if (EFI_ERROR (Status)) {
-    goto Done;
-  }
-
-Done:
   SdMmcFreeTrb (Trb);
 
   return Status;

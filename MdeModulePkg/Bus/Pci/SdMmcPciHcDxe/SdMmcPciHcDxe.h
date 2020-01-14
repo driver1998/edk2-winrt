@@ -3,14 +3,8 @@
   Provides some data structure definitions used by the SD/MMC host controller driver.
 
 Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
-Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2015 - 2020, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -136,6 +130,8 @@ typedef struct {
 
 #define SD_MMC_HC_TRB_SIG             SIGNATURE_32 ('T', 'R', 'B', 'T')
 
+#define SD_MMC_TRB_RETRIES            5
+
 //
 // TRB (Transfer Request Block) contains information for the cmd request.
 //
@@ -158,6 +154,7 @@ typedef struct {
   EFI_EVENT                           Event;
   BOOLEAN                             Started;
   UINT64                              Timeout;
+  UINT32                              Retries;
 
   SD_MMC_HC_ADMA_32_DESC_LINE         *Adma32Desc;
   SD_MMC_HC_ADMA_64_V3_DESC_LINE      *Adma64V3Desc;
