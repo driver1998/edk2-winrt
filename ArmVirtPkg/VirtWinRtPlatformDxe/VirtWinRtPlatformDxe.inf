@@ -1,0 +1,43 @@
+## @file
+#  This driver effectuates SbsaQemu platform configuration settings
+#
+#  Copyright (c) 2019, Linaro Ltd. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001c
+  BASE_NAME                      = VirtWinRtPlatformDxe
+  FILE_GUID                      = 76f4480f-750e-460a-8519-02be67124e70
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+
+  ENTRY_POINT                    = InitializeVirtWinRtPlatformDxe
+
+[Sources]
+  VirtWinRtPlatformDxe.c
+
+[Packages]
+  ArmVirtPkg/ArmVirtPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
+  ArmVirtPkg/ArmVirtQemuWinRtPkg.dec
+
+[LibraryClasses]
+  PcdLib
+  DebugLib
+  NonDiscoverableDeviceRegistrationLib
+  UefiDriverEntryPoint
+
+[Pcd]
+  gArmVirtWinRtTokenSpaceGuid.PcdPlatformEhciBase
+  gArmVirtWinRtTokenSpaceGuid.PcdPlatformEhciSize
+  gArmVirtWinRtTokenSpaceGuid.PcdPlatformSdHciBase
+  gArmVirtWinRtTokenSpaceGuid.PcdPlatformSdHciSize
+
+[Depex]
+  TRUE
+
